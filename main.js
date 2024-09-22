@@ -2,13 +2,13 @@
 
 import { saveGame, loadGame, initialState } from './gameState.js';
 
-// Initialize Game State
+// Inicializáljuk a játék állapotát
 let gameState = loadGame();
 
-// Debug: Log loaded game state
-console.log("Loaded Game State:", gameState);
+// Debug: Log a betöltött játék állapotát
+console.log("Betöltött Játékállapot:", gameState);
 
-// Ensure all properties are present in gameState
+// Biztosítjuk, hogy minden tulajdonság jelen van a játékállapotban
 function ensureStateIntegrity(state, defaultState) {
     for (const key in defaultState) {
         if (!(key in state)) {
@@ -24,10 +24,10 @@ function ensureStateIntegrity(state, defaultState) {
 
 gameState = ensureStateIntegrity(gameState, initialState);
 
-// Save state after ensuring integrity
+// Mentjük az állapotot a biztosítást követően
 saveGame(gameState);
 
-// Initialize Audio
+// Inicializáljuk az audiókat
 const backgroundMusic = new Howl({
     src: ['https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'],
     loop: true,
@@ -40,16 +40,16 @@ const clickSound = new Howl({
     volume: 0.3
 });
 
-// Play background music if not muted
+// Lejátszuk a háttérzenét, ha nincs némítva
 if (!gameState.settings.musicMuted) {
     backgroundMusic.play();
 }
 
-// Update Mute Button Text
+// Frissítjük a némítás gomb szövegét
 const muteButton = document.getElementById('mute-button');
 muteButton.textContent = backgroundMusic.mute() ? 'Engedélyezés' : 'Némítás';
 
-// Function to display screens
+// Képernyők megjelenítése
 function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
     const targetScreen = document.getElementById(screenId);
@@ -57,17 +57,17 @@ function showScreen(screenId) {
         targetScreen.classList.add('active');
         manageUIVisibility(screenId);
     } else {
-        console.error(`Screen with ID ${screenId} not found.`);
+        console.error(`A(z) ${screenId} azonosítójú képernyő nem található.`);
     }
 }
 
-// Manage visibility of player info and task list based on screen
+// UI láthatóságának kezelése a képernyő alapján
 function manageUIVisibility(screenId) {
     const playerInfo = document.getElementById('player-info');
     const taskList = document.getElementById('task-list');
     const gameContainer = document.getElementById('game-container');
 
-    if (screenId === 'starting-screen' || screenId === 'player-name-screen') {
+    if (screenId === 'starting-screen' || screenId === 'intro-story' || screenId === 'player-name-screen') {
         playerInfo.style.display = 'none';
         taskList.style.display = 'none';
         gameContainer.style.display = 'none';
@@ -78,18 +78,26 @@ function manageUIVisibility(screenId) {
     }
 }
 
-// Initialize Scenes and UI
+// Játék inicializálása
 function initializeGame() {
     showScreen('starting-screen');
 }
 
-// Event Listener for Start Button
+// Eseményfigyelők beállítása
+
+// Start gomb
 document.getElementById('start-button').addEventListener('click', () => {
+    playClickSound();
+    showScreen('intro-story');
+});
+
+// Tovább gomb a bevezető történethez
+document.getElementById('continue-button').addEventListener('click', () => {
     playClickSound();
     showScreen('player-name-screen');
 });
 
-// Event Listener for Player Name Form Submission
+// Játékos név megadása
 document.getElementById('player-name-form').addEventListener('submit', (e) => {
     e.preventDefault();
     const playerNameInput = document.getElementById('player-name-input');
@@ -104,7 +112,7 @@ document.getElementById('player-name-form').addEventListener('submit', (e) => {
     }
 });
 
-// Function to Start the Game
+// Játék indítása
 function startGame() {
     playClickSound();
     document.getElementById('player-name').textContent = `Név: ${gameState.player.name}`;
@@ -114,18 +122,26 @@ function startGame() {
     changeScene(gameState.currentScene);
 }
 
-// Update Player Info Display
+// Játékos információ frissítése
 function updatePlayerInfo() {
     document.getElementById('player-level').textContent = `Szint: ${gameState.player.level}`;
     document.getElementById('player-xp').textContent = `XP: ${gameState.player.xp}/${gameState.player.xpForNextLevel}`;
 }
 
-// Update Task List Display
+// Feladatlista frissítése
 function updateTaskList() {
     const tasksElement = document.getElementById('tasks');
-    tasksElement.innerHTML = ''; // Clear current tasks
+    tasksElement.innerHTML = ''; // Jelenlegi feladatok törlése
 
-    for (const [taskName, taskData] of Object.entries(gameState.tasks)) {
+    // Fő küldetés követő frissítése
+    const mainQuestStage = document.getElementById('main-quest-stage');
+    const mainQuestProgress = document.getElementById('main-quest-progress');
+    mainQuestStage.textContent = gameState.tasks.mainQuest.currentStage;
+    mainQuestProgress.value = gameState.tasks.mainQuest.currentStage;
+    mainQuestProgress.max = 5; // Teljes szakaszok száma
+
+    // Mellékfeladatok megjelenítése
+    for (const [taskName, taskData] of Object.entries(gameState.tasks.sideQuests)) {
         if (!taskData.completed) {
             const taskItem = document.createElement('li');
             taskItem.textContent = `${capitalizeFirstLetter(taskName)} (XP: ${taskData.xp})`;
@@ -134,17 +150,17 @@ function updateTaskList() {
     }
 }
 
-// Capitalize First Letter Utility Function
+// Első betű nagybetűvé alakítása
 function capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
-// Play Click Sound
+// Kattintási hang lejátszása
 function playClickSound() {
     clickSound.play();
 }
 
-// Mute Button Event Listener
+// Némítás gomb eseménykezelője
 muteButton.addEventListener('click', () => {
     playClickSound();
     backgroundMusic.mute(!backgroundMusic.mute());
@@ -153,32 +169,122 @@ muteButton.addEventListener('click', () => {
     saveGame(gameState);
 });
 
-// Sidebar Location Buttons Event Listener
+// Oldalsáv helyszín gombok eseménykezelője
 document.querySelectorAll('.location-button').forEach(button => {
     button.addEventListener('click', () => {
+        if (button.disabled) return; // Ha a gomb le van tiltva, ne történjen semmi
         const location = button.getAttribute('data-place');
         playClickSound();
         changeScene(location);
     });
 });
 
-// Function to Change Scenes
+// Jelenet váltása
 function changeScene(sceneId) {
     const sceneDisplay = document.getElementById('scene-display');
-    sceneDisplay.innerHTML = ''; // Clear current scene
+    sceneDisplay.innerHTML = ''; // Jelenlegi jelenet törlése
 
-    // Create Scene Element
+    // Jelenet részleteinek definiálása (kép és leírás)
+    const sceneDetails = {
+        'Foter': {
+            image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ee/A_volt_Palota_Szálló_épülete%2C_Szabadság_tér%2C_2017_Várpalota.jpg/1024px-A_volt_Palota_Szálló_épülete%2C_Szabadság_tér%2C_2017_Várpalota.jpg',
+            description: 'A nyüzsgő terület, ahol a fesztivál előkészületei zajlanak.'
+        },
+        'Fori': {
+            image: 'https://forgacsterasz.hu/upload/media/social-share-1200x630.jpg',
+            description: 'A piac területe, ahol a kereskedők állítják ki standjaikat, különböző árukat kínálva.'
+        },
+        'Spori': {
+            image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQBN0WPYhYEKXYVZnzXMc7d-XjvSyRxSd8n3w&s',
+            description: 'Az edzőterem, ahol a helyiek sportolnak és egészségüket megőrzik.'
+        },
+        'Alagsor': {
+            image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSjJtp_-OdNx-H1HaIQVBquhfadL76GD4WxsA&s',
+            description: 'A város alagsora, rejtett folyosók és titkok helyszíne.'
+        },
+        'Nitro': {
+            image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRO3cEnJXSipebQqHfdPY_Hq6sSxr80MsqLIQ&s',
+            description: 'A Nitro éjszakai klub, ahol a város fiataljai találkoznak és szórakoznak.'
+        },
+        'Kastely': {
+            image: 'https://kastelydombkavezo.hu/wp-content/uploads/2023/06/image0-1.jpeg',
+            description: 'A Kastély, a város történelmi épülete és események helyszíne.'
+        },
+        'Bisztro': {
+            image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQDOywSyDTM-Ua7gAtmqEZWpp1bUHPowyjvEg&s',
+            description: 'A Bisztro, ahol a város lakosai étkeznek és találkoznak.'
+        },
+        'Kertesz': {
+            image: 'https://media.istockphoto.com/id/1262540690/hu/fot%C3%B3/egy-keskeny-s%C3%A1ros-f%C3%B6ld%C3%BAt-haladt-%C3%A1t-a-vizes-mez%C5%91gazdas%C3%A1gi-ter%C3%BClet-k%C3%B6zep%C3%A9n-mindk%C3%A9t-oldalon.jpg?s=612x612&w=0&k=20&c=v6Ijt3VAe2o9-MJ56keNmMWP5-gGnKX8l9nk-F_oszc=',
+            description: 'A kertészeti terület, ahol növényeket gondoznak és pihenőhelyek találhatók.'
+        },
+        'Fincsi Bufé': {
+            image: 'https://lh3.googleusercontent.com/p/AF1QipMavyX0ulE1urHtrNsa8cfSbTVNsrIgR6I8ekI9=s680-w680-h510',
+            description: 'A Fincsi Bufé, ahol a város lakosai gyors harapnivalókat vásárolnak.'
+        },
+        'Nyugdíjas': {
+            image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiK6a45ruaE6DR4J2SYXi_RVZyoW5WWhQqdw9NgnKnKisDzzLau2q1HLO1efQB4cyZSd56SQFDfrRIk9UBR2RhlBQkir4JgmNjS4TYT7NfsE-aKOT1ZKSi2Hom72eaE9KzJqxpP9eqTTxk/s280/tavasz_02.jpg',
+            description: 'A Nyugdíjas lakosok otthona, ahol a város idősebb tagjai élnek.'
+        },
+        'Petfurdo': {
+            image: 'https://www.ertekesminoseg.hu/media/galeria/big/dsc1684.jpg',
+            description: 'A Petfurdo, ahol a város lakói találkoznak és beszélgetnek.'
+        },
+        'Dr. Szikla': {
+            image: 'https://kirandulastervezo.hu/photos/Petfurdo_Doktor_Szikla_01.jpg',
+            description: 'Dr. Szikla orvosa, aki a város egészségügyi ellátását végzi.'
+        },
+        'Gaspar Birtok': {
+            image: 'https://example.com/gaspar_birtok.jpg',
+            description: 'A Gaspar Birtok, a város szőlészeti területe.'
+        },
+        'Foter': {
+            image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQBN0WPYhYEKXYVZnzXMc7d-XjvSyRxSd8n3w&s',
+            description: 'A Foter, ahol a város fiataljai zenélnek és buliznak.'
+        },
+        'Danko Utca': {
+            image: 'https://utcakereso.hu/tile/osm/18/144282/91997.png?3',
+            description: 'A Danko utca, a város forgalmas utcája.'
+        },
+        'Bisztro': {
+            image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQDOywSyDTM-Ua7gAtmqEZWpp1bUHPowyjvEg&s',
+            description: 'A Bisztro, ahol a város lakosai étkeznek és találkoznak.'
+        },
+        'Muzeumkert': {
+            image: 'https://www.ittjartam.hu/profil/ugor-images/muzeumkert-etterem-4508-1200x800.webp',
+            description: 'A Muzeumkert, ahol a város történelmét bemutató kiállítások találhatók.'
+        },
+        'Laboratórium': {
+            image: 'https://example.com/laboratory.jpg',
+            description: 'Egy elhagyatott laboratórium, tele titokzatos eszközökkel és rejtett titkokkal.'
+        }
+        // További jelenetek hozzáadása szükség szerint
+    };
+
+    // Jelenet részleteinek lekérése
+    const details = sceneDetails[sceneId] || {
+        image: 'url("default-image-url.jpg")',
+        description: 'Egy csendes helyszín sajátos bájjal.'
+    };
+
+    // Jelenet elem létrehozása
     const scene = document.createElement('div');
     scene.id = sceneId;
     scene.classList.add('scene', 'active');
-    scene.style.backgroundImage = `url('https://ptcdn.hu/bridge?ms=745x390&t=5fc7c5ca&s=c7649d7c&url=https%3A%2F%2Fmapio.net%2Fimages-p%2F102950537.jpg')`; // Placeholder Image
+    scene.style.backgroundImage = `url('${details.image}')`;
 
-    // Scene Title
+    // Leírás hozzáadása a jelenethez
+    const descriptionOverlay = document.createElement('div');
+    descriptionOverlay.classList.add('scene-description');
+    descriptionOverlay.textContent = details.description;
+    scene.appendChild(descriptionOverlay);
+
+    // Jelenet címe
     const sceneTitle = document.createElement('h1');
     sceneTitle.textContent = sceneId;
     scene.appendChild(sceneTitle);
 
-    // Add NPCs to Scene
+    // NPC-k hozzáadása a jelenethez
     const npcList = getSceneNPCs(sceneId);
     if (npcList.length === 0) {
         const noNPC = document.createElement('p');
@@ -190,7 +296,7 @@ function changeScene(sceneId) {
             const npcElement = document.createElement('div');
             npcElement.classList.add('npc');
             npcElement.textContent = npc;
-            npcElement.tabIndex = 0; // Make focusable
+            npcElement.tabIndex = 0; // Fókuszálhatóvá teszi
             npcElement.addEventListener('click', () => {
                 playClickSound();
                 interactWithNPC(npc);
@@ -205,19 +311,19 @@ function changeScene(sceneId) {
         });
     }
 
-    // Append Scene to Scene Display
+    // Jelenet hozzáadása a jelenet megjelenítőhöz
     sceneDisplay.appendChild(scene);
 
-    // Update Game State
+    // Játék állapot frissítése
     gameState.currentScene = sceneId;
     saveGame(gameState);
 
-    // Update UI
+    // UI frissítése
     updatePlayerInfo();
     updateTaskList();
 }
 
-// Function to Get NPCs Based on Scene
+// NPC-k listájának lekérése a jelenet alapján
 function getSceneNPCs(sceneId) {
     const sceneNPCs = {
         'Spori': ['Gubi'],
@@ -234,13 +340,14 @@ function getSceneNPCs(sceneId) {
         'Foter': ['Lil Dave'],
         'Danko Utca': ['Baldi'],
         'Bisztro': ['Tessza'],
-        'Muzeumkert': ['Csorvivi'],
-        // Add more scenes and NPCs as needed
+        'Muzeumkert': ['Csorvivi', 'Elvira'], // Elvira hozzáadva
+        'Laboratórium': [] // Példa új helyszínre
+        // További jelenetek és NPC-k hozzáadása szükség szerint
     };
     return sceneNPCs[sceneId] || [];
 }
 
-// Function to Interact with NPC
+// NPC-val való interakció
 function interactWithNPC(npc) {
     const interactions = {
         'Gubi': interactWithGubi,
@@ -259,7 +366,8 @@ function interactWithNPC(npc) {
         'Baldi': interactWithBaldi,
         'Tessza': interactWithTessza,
         'Csorvivi': interactWithCsorvivi,
-        // Add more NPC interactions as needed
+        'Elvira': interactWithElvira // Új NPC
+        // További NPC interakciók hozzáadása szükség szerint
     };
 
     if (interactions[npc]) {
@@ -271,20 +379,20 @@ function interactWithNPC(npc) {
     }
 }
 
-// Function to Show Dialogue
+// Dialógus megjelenítése
 function showDialogue(text, options = []) {
     const sceneDisplay = document.getElementById('scene-display');
 
-    // Create Dialogue Box
+    // Dialógus doboz létrehozása
     const dialogueBox = document.createElement('div');
     dialogueBox.classList.add('dialogue-box');
 
-    // Dialogue Text
+    // Dialógus szöveg
     const dialogueText = document.createElement('p');
     dialogueText.textContent = text;
     dialogueBox.appendChild(dialogueText);
 
-    // Dialogue Options
+    // Dialógus opciók
     options.forEach(option => {
         const optionButton = document.createElement('button');
         optionButton.classList.add('button');
@@ -299,37 +407,113 @@ function showDialogue(text, options = []) {
         dialogueBox.appendChild(optionButton);
     });
 
-    // Append Dialogue Box to Scene Display
+    // Dialógus doboz hozzáadása a jelenet megjelenítőhöz
     sceneDisplay.appendChild(dialogueBox);
 
-    // Animate Dialogue Box with GSAP
+    // Dialógus animálása GSAP segítségével
     gsap.fromTo(dialogueBox, { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.3 });
 }
 
-// Function to Close Dialogue
+// Dialógus bezárása
 function closeDialogue() {
     const dialogueBox = document.querySelector('.dialogue-box');
     if (dialogueBox) {
-        // Animate Dialogue Box Out
+        // Dialógus doboz animálása
         gsap.to(dialogueBox, { opacity: 0, scale: 0.8, duration: 0.3, onComplete: () => {
             dialogueBox.remove();
         }});
     }
 }
 
-// NPC Interaction Functions
-
-// Interact with Gubi
-function interactWithGubi() {
-    showDialogue('Szia! Én vagyok Gubi. A városi fesztivált szervezzük.', [
-        { text: 'Hogyan segíthetek?', action: startFestivalTask },
-        { text: 'Elbúcsúzom', action: closeDialogue }
+// Fő küldetés események megjelenítése
+function showStoryEvent(message) {
+    showDialogue(message, [
+        { text: 'Folytatás', action: closeDialogue }
     ]);
 }
 
-// Start Festival Task
+// Interakciók és feladatok definiálása
+
+// Fő küldetés előrehaladás kezelése
+function handleTaskCompletion(taskName) {
+    const sideQuests = gameState.tasks.sideQuests;
+    const mainQuest = gameState.tasks.mainQuest;
+
+    // Mellékfeladat teljesítése esetén
+    if (sideQuests[taskName] && !sideQuests[taskName].completed) {
+        sideQuests[taskName].completed = true;
+        addXP(sideQuests[taskName].xp);
+
+        // Fő küldetés előrehaladása mellékfeladatok alapján
+        switch (mainQuest.currentStage) {
+            case 1:
+                if (sideQuests.festival.completed && sideQuests.marketSetup.completed) {
+                    mainQuest.currentStage = 2;
+                    showStoryEvent("Segítettél a lakosoknak felkészülni a fesztiválra és az asztalfoglalásban. A város elkezd visszanyerni régi dicsőségét.");
+                }
+                break;
+            case 2:
+                if (sideQuests.vehicleRepair.completed && sideQuests.artExhibition.completed) {
+                    mainQuest.currentStage = 3;
+                    showStoryEvent("A járművek javítása és a művészeti kiállítások szervezése során nyomokat találtál a titokzatos eseményről.");
+                }
+                break;
+            case 3:
+                if (sideQuests.historyLesson.completed && sideQuests.networkUpgrade.completed) {
+                    mainQuest.currentStage = 4;
+                    showStoryEvent("A történelmi tanulmányok és a hálózat fejlesztése révén mélyebb betekintést nyertél Várpalota múltjába.");
+                }
+                break;
+            case 4:
+                if (sideQuests.concert.completed && sideQuests.healthCamp.completed) {
+                    mainQuest.currentStage = 5;
+                    showStoryEvent("A koncertek és az egészségügyi tábor sikeresen helyreállították a város egységét.");
+                }
+                break;
+            case 5:
+                // Fő küldetés befejezése
+                mainQuest.completed = true;
+                showDialogue("Gratulálok! Sikeresen helyreállítottad Várpalota békéjét és felfedezted a város titkait.", [
+                    { text: 'Köszönöm!', action: closeDialogue }
+                ]);
+                break;
+            default:
+                break;
+        }
+
+        // Fő küldetés befejezése ellenőrzése
+        if (mainQuest.currentStage > 5) {
+            mainQuest.completed = true;
+            showDialogue("Gratulálok! Sikeresen helyreállítottad Várpalota békéjét és felfedezted a város titkait.", [
+                { text: 'Köszönöm!', action: closeDialogue }
+            ]);
+        }
+
+        saveGame(gameState);
+        updatePlayerInfo();
+        updateTaskList();
+    }
+}
+
+// NPC interakciók
+
+// Interakció Gubi-val
+function interactWithGubi() {
+    if (gameState.tasks.mainQuest.currentStage === 1) {
+        showDialogue('Szia! Én vagyok Gubi. A fesztivál előkészületeiben tudsz segíteni? Ez fontos ahhoz, hogy a város újra virágozzon.', [
+            { text: 'Igen, segítek.', action: startFestivalTask },
+            { text: 'Nem, később.', action: closeDialogue }
+        ]);
+    } else {
+        showDialogue('Már segítettél a fesztiválon. Köszönöm a segítségedet!', [
+            { text: 'Szívesen!', action: closeDialogue }
+        ]);
+    }
+}
+
+// Fesztivál feladat indítása
 function startFestivalTask() {
-    if (!gameState.tasks.festival.completed) {
+    if (!gameState.tasks.sideQuests.festival.completed) {
         showDialogue('Segíthetsz a fesztivál előkészületeiben. Kezdjük el!', [
             { text: 'Rendben, hol kezdjük?', action: initiateFestivalPreparation }
         ]);
@@ -340,8 +524,8 @@ function startFestivalTask() {
     }
 }
 
-// Initiate Festival Preparation
-function initiateFestivalPreparation() {
+// Fesztivál előkészítése
+function initiateFestivalPreparation() {    
     showDialogue('Gyűjtsd össze a következő díszeket: Lufik, Függönyök és Csillárok.', [
         { text: 'Lufik beszerzése', action: () => gatherDecoration('Lufik') },
         { text: 'Függönyök beszerzése', action: () => gatherDecoration('Függönyök') },
@@ -350,6 +534,7 @@ function initiateFestivalPreparation() {
     ]);
 }
 
+// Díszek beszerzése
 function gatherDecoration(decoration) {
     showDialogue(`Összegyűjtötted a(z) ${decoration}-t.`, [
         { text: 'Folytatás', action: () => {
@@ -361,27 +546,33 @@ function gatherDecoration(decoration) {
     ]);
 }
 
+// Fesztivál feladat teljesítése ellenőrzése
 function checkFestivalCompletion() {
     const requiredDecorations = ['Lufik', 'Függönyök', 'Csillárok'];
     const collectedDecorations = gameState.decisions.filter(decision => requiredDecorations.includes(decision.replace('Beszerzett: ', '')));
     if (collectedDecorations.length === requiredDecorations.length) {
-        gameState.tasks.festival.completed = true;
-        addXP(gameState.tasks.festival.xp);
+        gameState.tasks.sideQuests.festival.completed = true;
+        addXP(gameState.tasks.sideQuests.festival.xp);
         showDialogue('Minden dísz beszerződött! Gubi sikeresen felkészült a fesztiválra.', [
-            { text: 'Folytatás', action: closeDialogue }
+            { text: 'Folytatás', action: () => {
+                handleTaskCompletion('festival');
+                closeDialogue();
+            }}
         ]);
     }
 }
 
+// Interakció Ricsko-val
 function interactWithRicsko() {
-    showDialogue('Szia! Én vagyok Ricsko, a Fori piac eladója. Segíthetsz nekem beállítani az új standomat?', [
+    showDialogue('Szia! Én vagyok Ricsko, a Fori lelkes. Segíthetsz nekem asztalt foglalni?', [
         { text: 'Igen, szívesen!', action: startMarketSetupTask },
         { text: 'Nem, éppen elfoglalt vagyok.', action: closeDialogue }
     ]);
 }
 
+// Asztalfoglalás feladat indítása
 function startMarketSetupTask() {
-    if (!gameState.tasks.marketSetup.completed) {
+    if (!gameState.tasks.sideQuests.marketSetup.completed) {
         showDialogue('Kérlek, gyűjtsd össze a következő felszereléseket: Asztal, Székek és Zászlók.', [
             { text: 'Asztal beszerzése', action: () => gatherEquipment('Asztal') },
             { text: 'Székek beszerzése', action: () => gatherEquipment('Székek') },
@@ -389,13 +580,13 @@ function startMarketSetupTask() {
             { text: 'Mégsem', action: closeDialogue }
         ]);
     } else {
-        showDialogue('Már segítettél a piac beállításában. Köszönöm!', [
+        showDialogue('Már segítettél az asztalfoglalásban. Köszönöm!', [
             { text: 'Folytatás', action: closeDialogue }
         ]);
     }
 }
 
-// Function to Gather Equipment
+// Felszerelések beszerzése
 function gatherEquipment(equipment) {
     showDialogue(`Összegyűjtötted a(z) ${equipment}-t.`, [
         { text: 'Folytatás', action: () => {
@@ -407,22 +598,23 @@ function gatherEquipment(equipment) {
     ]);
 }
 
-// Function to Check Market Setup Task Completion
+// Asztalfoglalás feladat teljesítése ellenőrzése
 function checkMarketSetupCompletion() {
     const requiredEquipments = ['Asztal', 'Székek', 'Zászlók'];
     const collectedEquipments = gameState.decisions.filter(decision => requiredEquipments.includes(decision.replace('Beszerzett: ', '')));
     if (collectedEquipments.length === requiredEquipments.length) {
-        gameState.tasks.marketSetup.completed = true;
-        addXP(gameState.tasks.marketSetup.xp);
-        showDialogue('Minden felszerelés beszerződött! Ricsko sikeresen felállította a standot.', [
-            { text: 'Folytatás', action: closeDialogue }
+        gameState.tasks.sideQuests.marketSetup.completed = true;
+        addXP(gameState.tasks.sideQuests.marketSetup.xp);
+        showDialogue('Minden felszerelés beszerződött! Ricsko sikeresen szerzett asztalt.', [
+            { text: 'Folytatás', action: () => {
+                handleTaskCompletion('marketSetup');
+                closeDialogue();
+            }}
         ]);
     }
 }
 
-// ... A meglévő interakciós funkciók ...
-
-// Interact with Jcsar
+// Interakció Jcsar-val
 function interactWithJcsar() {
     showDialogue('Helló! Én vagyok Jcsar, a város szerelője. Az autóm leállt. Tudsz segíteni megtalálni a hiányzó alkatrészeket?', [
         { text: 'Igen, segíthetek.', action: startVehicleRepairTask },
@@ -431,10 +623,18 @@ function interactWithJcsar() {
     ]);
 }
 
+// Interakció Elvirával
+function interactWithElvira() {
+    showDialogue('Szia! Én vagyok Elvira a Muzeumkertből. Segíthetsz egy különleges kiállítás megszervezésében?', [
+        { text: 'Igen, szívesen!', action: startMuseumEventTask },
+        { text: 'Nem, most nem alkalmas.', action: closeDialogue }
+    ]);
+}
 
-// Start Vehicle Repair Task
+
+// Járműjavítás feladat indítása
 function startVehicleRepairTask() {
-    if (!gameState.tasks.vehicleRepair.completed) {
+    if (!gameState.tasks.sideQuests.vehicleRepair.completed) {
         showDialogue('Kérlek, találd meg a következő alkatrészeket: Motor, Gumik és Akkumulátor.', [
             { text: 'Motor megtalálása', action: () => findPart('Motor') },
             { text: 'Gumik megtalálása', action: () => findPart('Gumik') },
@@ -448,7 +648,7 @@ function startVehicleRepairTask() {
     }
 }
 
-// Function to Find Vehicle Part
+// Alkatrészek megtalálása
 function findPart(part) {
     showDialogue(`Megtaláltad a(z) ${part}-t.`, [
         { text: 'Folytatás', action: () => {
@@ -460,31 +660,34 @@ function findPart(part) {
     ]);
 }
 
-// Function to Check Vehicle Repair Task Completion
+// Járműjavítás feladat teljesítése ellenőrzése
 function checkVehicleRepairCompletion() {
     const requiredParts = ['Motor', 'Gumik', 'Akkumulátor'];
     const collectedParts = gameState.decisions.filter(decision => requiredParts.includes(decision.replace('Megtálált alkatrész: ', '')));
     if (collectedParts.length === requiredParts.length) {
-        gameState.tasks.vehicleRepair.completed = true;
-        addXP(gameState.tasks.vehicleRepair.xp);
+        gameState.tasks.sideQuests.vehicleRepair.completed = true;
+        addXP(gameState.tasks.sideQuests.vehicleRepair.xp);
         showDialogue('Minden alkatrész megtalálva! Jcsar sikeresen megjavította az autót.', [
-            { text: 'Folytatás', action: closeDialogue }
+            { text: 'Folytatás', action: () => {
+                handleTaskCompletion('vehicleRepair');
+                closeDialogue();
+            }}
         ]);
     }
 }
 
-// Interact with Mogyi
+// Interakció Mogyi-val
 function interactWithMogyi() {
-    showDialogue('Szia! Én vagyok Mogyi, a Kertesz művésze. Előkészítem a művészeti kiállítást. Segítenél nekem?', [
+    showDialogue('Szia! Én vagyok Mogyi, a Kertészben tartottam bulit, pár tárgy eltűnt. Segítesz megkeresni a tó alján?', [
         { text: 'Igen, szívesen!', action: startArtExhibitionTask },
         { text: 'Nem, talán később.', action: closeDialogue }
     ]);
 }
 
-// Start Art Exhibition Task
+// Művészeti kiállítás feladat indítása
 function startArtExhibitionTask() {
-    if (!gameState.tasks.artExhibition.completed) {
-        showDialogue('Kérlek, gyűjtsd össze a következő műalkotásokat különböző művészektől: Festmény, Szobor és Fotográfia.', [
+    if (!gameState.tasks.sideQuests.artExhibition.completed) {
+        showDialogue('Kérlek, gyűjtsd össze a következő műalkotásokat a tó aljáról: Festmény, Szobor és Fotográfia.', [
             { text: 'Festmény beszerzése', action: () => gatherArtPiece('Festmény') },
             { text: 'Szobor beszerzése', action: () => gatherArtPiece('Szobor') },
             { text: 'Fotográfia beszerzése', action: () => gatherArtPiece('Fotográfia') },
@@ -497,7 +700,7 @@ function startArtExhibitionTask() {
     }
 }
 
-// Function to Gather Art Pieces
+// Műalkotások beszerzése
 function gatherArtPiece(artPiece) {
     showDialogue(`Összegyűjtötted a(z) ${artPiece}-t.`, [
         { text: 'Folytatás', action: () => {
@@ -509,20 +712,23 @@ function gatherArtPiece(artPiece) {
     ]);
 }
 
-// Function to Check Art Exhibition Task Completion
+// Művészeti kiállítás feladat teljesítése ellenőrzése
 function checkArtExhibitionCompletion() {
     const requiredArtPieces = ['Festmény', 'Szobor', 'Fotográfia'];
     const collectedArtPieces = gameState.decisions.filter(decision => requiredArtPieces.includes(decision.replace('Beszerzett műalkotás: ', '')));
     if (collectedArtPieces.length === requiredArtPieces.length) {
-        gameState.tasks.artExhibition.completed = true;
-        addXP(gameState.tasks.artExhibition.xp);
-        showDialogue('Minden műalkotás beszerződött! Mogyi sikeresen felállította a kiállítást.', [
-            { text: 'Folytatás', action: closeDialogue }
+        gameState.tasks.sideQuests.artExhibition.completed = true;
+        addXP(gameState.tasks.sideQuests.artExhibition.xp);
+        showDialogue('Oyee megvan minden, Mogyi máskor is tarthat bulit a Kertészben.', [
+            { text: 'Folytatás', action: () => {
+                handleTaskCompletion('artExhibition');
+                closeDialogue();
+            }}
         ]);
     }
 }
 
-// Interact with Kalman
+// Interakció Kalman-nal
 function interactWithKalman() {
     showDialogue('Üdv! Én vagyok Kalman, a város történésze. Szeretnéd megtudni Varpalota történelmét?', [
         { text: 'Igen, mesélj többet.', action: startHistoryLessonTask },
@@ -530,9 +736,9 @@ function interactWithKalman() {
     ]);
 }
 
-// Start History Lesson Task
+// Történelmi tanulmány feladat indítása
 function startHistoryLessonTask() {
-    if (!gameState.tasks.historyLesson.completed) {
+    if (!gameState.tasks.sideQuests.historyLesson.completed) {
         showDialogue('Kérlek, látogasd meg a következő helyszíneket történelmi tárgyak gyűjtéséhez: Kastely és Muzeumkert.', [
             { text: 'Látogass el Kastely-be', action: () => visitLocation('Kastely') },
             { text: 'Látogass el Muzeumkertbe', action: () => visitLocation('Muzeumkert') },
@@ -545,7 +751,7 @@ function startHistoryLessonTask() {
     }
 }
 
-// Function to Visit Location for History Lesson
+// Helyszín látogatása történelmi tanulmányhoz
 function visitLocation(location) {
     showDialogue(`Látogattál el a(z) ${location}-be és összegyűjtöttél történelmi tárgyakat.`, [
         { text: 'Folytatás', action: () => {
@@ -557,20 +763,23 @@ function visitLocation(location) {
     ]);
 }
 
-// Function to Check History Lesson Task Completion
+// Történelmi tanulmány feladat teljesítése ellenőrzése
 function checkHistoryLessonCompletion() {
     const requiredLocations = ['Kastely', 'Muzeumkert'];
     const visitedLocations = gameState.decisions.filter(decision => requiredLocations.includes(decision.replace('Látogatott helyszín: ', '')));
     if (visitedLocations.length === requiredLocations.length) {
-        gameState.tasks.historyLesson.completed = true;
-        addXP(gameState.tasks.historyLesson.xp);
+        gameState.tasks.sideQuests.historyLesson.completed = true;
+        addXP(gameState.tasks.sideQuests.historyLesson.xp);
         showDialogue('Köszönöm, hogy segítettél a történelmi tanulmányban!', [
-            { text: 'Folytatás', action: closeDialogue }
+            { text: 'Folytatás', action: () => {
+                handleTaskCompletion('historyLesson');
+                closeDialogue();
+            }}
         ]);
     }
 }
 
-// Interact with Foki James
+// Interakció Foki James-sel
 function interactWithFokiJames() {
     showDialogue('Hé! Én vagyok Foki James, a Nitro éjszakai klub tulajdonosa. Segíthetsz nekem egy nagy esemény tervezésében?', [
         { text: 'Igen, csináljuk!', action: startNightclubEventTask },
@@ -578,9 +787,9 @@ function interactWithFokiJames() {
     ]);
 }
 
-// Start Nightclub Event Task
+// Nitro éjszakai klub feladat indítása
 function startNightclubEventTask() {
-    if (!gameState.tasks.nightclubEvent.completed) {
+    if (!gameState.tasks.sideQuests.nightclubEvent.completed) {
         showDialogue('Szuper! Kérlek, teljesítsd a következő feladatokat: DJ beállítása, Világítás és Promóció.', [
             { text: 'DJ beállítása', action: () => setupDJ() },
             { text: 'Világítás beállítása', action: () => setupLighting() },
@@ -594,7 +803,7 @@ function startNightclubEventTask() {
     }
 }
 
-// Function to Setup DJ
+// DJ beállítása
 function setupDJ() {
     showDialogue('Beállítottad a DJ rendszert.', [
         { text: 'Folytatás', action: () => {
@@ -606,7 +815,7 @@ function setupDJ() {
     ]);
 }
 
-// Function to Setup Lighting
+// Világítás beállítása
 function setupLighting() {
     showDialogue('Beállítottad a világítást.', [
         { text: 'Folytatás', action: () => {
@@ -618,7 +827,7 @@ function setupLighting() {
     ]);
 }
 
-// Function to Organize Promotion
+// Promóció szervezése
 function organizePromotion() {
     showDialogue('Szervezted a promóciót.', [
         { text: 'Folytatás', action: () => {
@@ -645,7 +854,7 @@ function checkNightclubEventCompletion() {
 
 // Interact with Ati
 function interactWithAti() {
-    showDialogue('Helló! Én vagyok Ati, a Kastelyi tech szakértője. Segíthetsz a város hálózatának fejlesztésében?', [
+    showDialogue('Helló! Én vagyok Ati, a Kastely tech szakértője. Segíthetsz a város hálózatának fejlesztésében?', [
         { text: 'Igen, segíthetek.', action: startNetworkUpgradeTask },
         { text: 'Nem, most nem alkalmas.', action: closeDialogue }
     ]);
@@ -718,7 +927,7 @@ function checkNetworkUpgradeCompletion() {
 
 // Interact with Szabika
 function interactWithSzabika() {
-    showDialogue('Szia! Én vagyok Szabika a Fincsi Buféből. Segíthetsz egy különleges étel elkészítésében a városi eseményre?', [
+    showDialogue('Szia! Én vagyok Szabika a Fincsi Buféből. Fuves salatat akarok csinalni, segitesz?', [
         { text: 'Igen, segíthetek.', action: startCookingTask },
         { text: 'Nem, talán később.', action: closeDialogue }
     ]);
@@ -727,10 +936,10 @@ function interactWithSzabika() {
 // Start Cooking Task
 function startCookingTask() {
     if (!gameState.tasks.cooking.completed) {
-        showDialogue('Szuper! Kérlek, gyűjtsd össze a következő hozzávalókat: Paradicsom, Sajt és Bazsalikom.', [
+        showDialogue('Szuper! Kérlek, gyűjtsd össze a következő hozzávalókat: Paradicsom, Sajt és Fu.', [
             { text: 'Paradicsom beszerzése', action: () => gatherIngredient('Paradicsom') },
             { text: 'Sajt beszerzése', action: () => gatherIngredient('Sajt') },
-            { text: 'Bazsalikom beszerzése', action: () => gatherIngredient('Bazsalikom') },
+            { text: 'Fu beszerzése', action: () => gatherIngredient('Fu') },
             { text: 'Mégsem', action: closeDialogue }
         ]);
     } else {
@@ -754,7 +963,7 @@ function gatherIngredient(ingredient) {
 
 // Function to Check Cooking Task Completion
 function checkCookingTaskCompletion() {
-    const requiredIngredients = ['Paradicsom', 'Sajt', 'Bazsalikom'];
+    const requiredIngredients = ['Paradicsom', 'Sajt', 'Fu'];
     const collectedIngredients = gameState.decisions.filter(decision => requiredIngredients.includes(decision.replace('Gyűjtött hozzávaló: ', '')));
     if (collectedIngredients.length === requiredIngredients.length) {
         gameState.tasks.cooking.completed = true;
@@ -785,7 +994,7 @@ function listenToStory() {
 
 // Interact with Dobi
 function interactWithDobi() {
-    showDialogue('Szia! Én vagyok Dobi, a kisállat bolt tulajdonosa. Segíthetsz megtalálni elveszett kisállataimat a városban?', [
+    showDialogue('Szia! Én vagyok Dobi, a Zozo bolt tulajdonosa. Segíthetsz megtalálni elveszett kisállataimat a városban?', [
         { text: 'Igen, segíthetek.', action: startFindPetsTask },
         { text: 'Nem, most nem alkalmas.', action: closeDialogue }
     ]);
@@ -795,9 +1004,9 @@ function interactWithDobi() {
 function startFindPetsTask() {
     if (!gameState.tasks.findPets.completed) {
         showDialogue('Rendben! Kérlek, keresd meg a következő kisállatokat: Fluffy a macska, Rex a kutya és Goldie a hal.', [
-            { text: 'Fluffy a macska keresése', action: () => findPet('Fluffy a macska') },
-            { text: 'Rex a kutya keresése', action: () => findPet('Rex a kutya') },
-            { text: 'Goldie a hal keresése', action: () => findPet('Goldie a hal') },
+            { text: 'Geci a macska keresése', action: () => findPet('Fluffy a macska') },
+            { text: 'Szar a kutya keresése', action: () => findPet('Rex a kutya') },
+            { text: 'Fasz a hal keresése', action: () => findPet('Goldie a hal') },
             { text: 'Mégsem', action: closeDialogue }
         ]);
     } else {
@@ -821,7 +1030,7 @@ function findPet(pet) {
 
 // Function to Check Find Pets Task Completion
 function checkFindPetsCompletion() {
-    const requiredPets = ['Fluffy a macska', 'Rex a kutya', 'Goldie a hal'];
+    const requiredPets = ['Geci a macska', 'Szar a kutya', 'Fasz a hal'];
     const foundPets = gameState.decisions.filter(decision => requiredPets.includes(decision.replace('Megtálált kisállat: ', '')));
     if (foundPets.length === requiredPets.length) {
         gameState.tasks.findPets.completed = true;
@@ -1205,7 +1414,7 @@ function checkRestaurantCompletion() {
 
 // Interact with Csorvivi
 function interactWithCsorvivi() {
-    showDialogue('Helló! Én vagyok Csorvivi a Muzeumkertből. Segíthetsz a múzeum rendezvényeinek szervezésében?', [
+    showDialogue('Helló! Én vagyok Csorvivi a Muzeumkertből. Csapjunk egy nagy bulit waaaaa', [
         { text: 'Igen, segíthetsz.', action: startMuseumEventTask },
         { text: 'Nem, most nem alkalmas.', action: closeDialogue }
     ]);
@@ -1310,8 +1519,8 @@ function initializeMemoryGame() {
         const card = document.createElement('div');
         card.classList.add('memory-card');
         card.innerHTML = `
+                    <div class="back"></div>
             <div class="front">${symbol}</div>
-            <div class="back"></div>
         `;
         memoryGameContainer.appendChild(card);
         

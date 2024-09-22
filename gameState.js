@@ -24,41 +24,54 @@ const initialState = {
         LilDave: { location: 'Foter', status: 'active' },
         Baldi: { location: 'Danko Utca', status: 'active' },
         Tessza: { location: 'Bisztro', status: 'active' },
-        Csorvivi: { location: 'Muzeumkert', status: 'active' }
+        Csorvivi: { location: 'Muzeumkert', status: 'active' },
+        Elvira: { location: 'Muzeumkert', status: 'active' } // Új karakter
     },
     decisions: [],
     tasks: {
-        festival: { completed: false, xp: 20 },
-        marketSetup: { completed: false, xp: 15 },
-        vehicleRepair: { completed: false, xp: 25 },
-        artExhibition: { completed: false, xp: 20 },
-        historyLesson: { completed: false, xp: 15 },
-        nightclubEvent: { completed: false, xp: 30 },
-        cooking: { completed: false, xp: 15 },
-        findPets: { completed: false, xp: 20 },
-        healthCamp: { completed: false, xp: 25 },
-        vineyard: { completed: false, xp: 20 },
-        concert: { completed: false, xp: 25 },
-        businessExpansion: { completed: false, xp: 30 },
-        restaurant: { completed: false, xp: 20 }, // Added missing tasks
-        museumEvent: { completed: false, xp: 25 } // Added missing tasks
+        mainQuest: {
+            currentStage: 1,
+            completed: false
+        },
+        sideQuests: {
+            festival: { completed: false, xp: 20 },
+            marketSetup: { completed: false, xp: 15 },
+            vehicleRepair: { completed: false, xp: 25 },
+            artExhibition: { completed: false, xp: 20 },
+            historyLesson: { completed: false, xp: 15 },
+            nightclubEvent: { completed: false, xp: 30 },
+            cooking: { completed: false, xp: 15 },
+            findPets: { completed: false, xp: 20 },
+            healthCamp: { completed: false, xp: 25 },
+            vineyard: { completed: false, xp: 20 },
+            concert: { completed: false, xp: 25 },
+            businessExpansion: { completed: false, xp: 30 },
+            restaurant: { completed: false, xp: 20 },
+            museumEvent: { completed: false, xp: 25 }
+        }
     },
-    settings: { // Game Settings
+    settings: { // Játék beállítások
         musicMuted: false
+    },
+    storyProgress: {
+        introduction: true,
+        uncoverSecrets: false,
+        rebuildTown: false,
+        finalChallenge: false
     }
 };
 
 /**
- * Save game state to localStorage
- * @param {Object} state - Current game state
+ * Mentés a játékállapotot localStorage-ba
+ * @param {Object} state - Aktuális játékállapot
  */
 function saveGame(state) {
     localStorage.setItem('varpalotaGameState', JSON.stringify(state));
 }
 
 /**
- * Load game state from localStorage
- * @returns {Object} - Loaded game state or initial state
+ * Betölti a játékállapotot localStorage-ból
+ * @returns {Object} - Betöltött játékállapot vagy kezdeti állapot
  */
 function loadGame() {
     const state = localStorage.getItem('varpalotaGameState');

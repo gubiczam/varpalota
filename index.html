@@ -5,20 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Varpalota - Kalandjáték</title>
     <link rel="stylesheet" href="styles.css">
-    <!-- Külső betűtípusok -->
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <!-- Favicon -->
     <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
 <body>
     <main>
         <!-- Kezdőképernyő -->
         <section id="starting-screen" class="screen active" aria-labelledby="start-heading">
-            <h1 id="start-heading">Üdvözöllek Várpalotán! :)</h1>
+            <h1 id="start-heading">Üdvözöllek Várpalotán!:)</h1>
             <button id="start-button" class="button" aria-label="Játék indítása">Játék indítása</button>
         </section>
 
-        <!-- Játékos neve képernyő -->
+        <!-- Játék bevezető történet -->
+        <section id="intro-story" class="screen" aria-labelledby="intro-heading">
+            <h2 id="intro-heading">Bevezető</h2>
+            <p>
+                A Várpalota békés város évekkel ezelőtt egy titokzatos esemény után elborult. Mint a főhős, a feladatod, hogy helyreállítsd Várpalota békéjét, segíts a lakosoknak, fedezd fel a város rejtett titkait, és építsd újra a kulcsfontosságú helyszíneket. Útjaid során kihívásokkal találkozol, fontos döntéseket hozol, és felfedezed a város valódi történelmét.
+            </p>
+            <button id="continue-button" class="button" aria-label="Tovább">Tovább</button>
+        </section>
+
+        <!-- Játékos név megadása -->
         <section id="player-name-screen" class="screen" aria-labelledby="name-heading">
             <h2 id="name-heading">Add meg a játékos neved</h2>
             <form id="player-name-form">
@@ -27,23 +34,17 @@
             </form>
         </section>
 
-        <!-- ... A meglévő HTML részek ... -->
-
-<!-- Memóriajáték Szakasz -->
-<section id="memory-game-screen" class="screen" aria-labelledby="memory-game-heading">
-    <h2 id="memory-game-heading">Memóriajáték</h2>
-    <div id="memory-game">
-        <!-- Kártyák dinamikusan generálódnak -->
-    </div>
-    <button id="exit-memory-game-button" class="button">Kilépés</button>
-</section>
-
-<!-- ... A meglévő HTML részek ... -->
-
+        <!-- Memóriajáték képernyő -->
+        <section id="memory-game-screen" class="screen" aria-labelledby="memory-game-heading">
+            <h2 id="memory-game-heading">Memóriajáték</h2>
+            <div id="memory-game">
+            </div>
+            <button id="exit-memory-game-button" class="button">Kilépés</button>
+        </section>
 
         <!-- Fő játék konténer -->
         <section id="game-container" class="screen" aria-live="polite">
-            <!-- Sidebar for Locations -->
+            <!-- Oldalsáv a helyszínekhez -->
             <aside id="location-sidebar" aria-label="Elérhető helyszínek">
                 <h2>Helyszínek</h2>
                 <ul id="location-list">
@@ -62,11 +63,12 @@
                     <li><button class="location-button button" data-place="Danko Utca">Danko Utca</button></li>
                     <li><button class="location-button button" data-place="Bisztro">Bisztro</button></li>
                     <li><button class="location-button button" data-place="Muzeumkert">Muzeumkert</button></li>
+                    <li><button class="location-button button disabled" data-place="Laboratórium" disabled>Laboratórium</button></li>
                     <!-- További helyek hozzáadása szükség szerint -->
                 </ul>
             </aside>
 
-            <!-- Main Scene Display -->
+            <!-- Fő jelenet megjelenítése -->
             <div id="scene-display">
                 <!-- Jelenetek dinamikusan ide lesznek betöltve -->
             </div>
@@ -83,6 +85,11 @@
         <!-- Feladatlista -->
         <aside id="task-list" aria-label="Aktuális feladatok">
             <h2>Aktuális feladatok</h2>
+            <div id="main-quest">
+                <h3>Fő Küldetés</h3>
+                <p>Jelenlegi szint: <span id="main-quest-stage">1</span></p>
+                <progress id="main-quest-progress" value="1" max="5"></progress>
+            </div>
             <ul id="tasks">
                 <!-- Feladatok dinamikusan ide lesznek betöltve -->
             </ul>
