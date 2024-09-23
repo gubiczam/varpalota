@@ -3,103 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Varpalota - Kalandjáték</title>
+    <title>Story Game</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
 <body>
     <main>
-        <!-- Kezdőképernyő -->
-        <section id="starting-screen" class="screen active" aria-labelledby="start-heading">
-            <h1 id="start-heading">Üdvözöllek Várpalotán!:)</h1>
-            <button id="start-button" class="button" aria-label="Játék indítása">Játék indítása</button>
-        </section>
+        <!-- Start Screen -->
+        <div class="screen active" id="start-screen">
+            <h1>He lo Várpalotán :)</h1>
+            <button class="button" id="start-button">Játék Indítása</button>
+        </div>
 
-        <!-- Játék bevezető történet -->
-        <section id="intro-story" class="screen" aria-labelledby="intro-heading">
-            <h2 id="intro-heading">Bevezető</h2>
-            <p>
-                A Várpalota békés város évekkel ezelőtt egy titokzatos esemény után elborult. Mint a főhős, a feladatod, hogy helyreállítsd Várpalota békéjét, segíts a lakosoknak, fedezd fel a város rejtett titkait, és építsd újra a kulcsfontosságú helyszíneket. Útjaid során kihívásokkal találkozol, fontos döntéseket hozol, és felfedezed a város valódi történelmét.
-            </p>
-            <button id="continue-button" class="button" aria-label="Tovább">Tovább</button>
-        </section>
-
-        <!-- Játékos név megadása -->
-        <section id="player-name-screen" class="screen" aria-labelledby="name-heading">
-            <h2 id="name-heading">Add meg a játékos neved</h2>
-            <form id="player-name-form">
-                <input type="text" id="player-name-input" placeholder="Írd be a neved" maxlength="12" aria-label="Játékos neve" required>
-                <button type="submit" id="confirm-name-button" class="button">Megerősítés</button>
-            </form>
-        </section>
-
-        <!-- Memóriajáték képernyő -->
-        <section id="memory-game-screen" class="screen" aria-labelledby="memory-game-heading">
-            <h2 id="memory-game-heading">Memóriajáték</h2>
-            <div id="memory-game">
+        <!-- Character Selection Screen -->
+        <div class="screen" id="character-selection-screen">
+            <h1>Válaszd ki a karaktered!</h1>
+            <div id="character-selection">
+                <!-- Character cards will be dynamically inserted here -->
             </div>
-            <button id="exit-memory-game-button" class="button">Kilépés</button>
-        </section>
+        </div>
 
-        <!-- Fő játék konténer -->
-        <section id="game-container" class="screen" aria-live="polite">
-            <!-- Oldalsáv a helyszínekhez -->
-            <aside id="location-sidebar" aria-label="Elérhető helyszínek">
-                <h2>Helyszínek</h2>
-                <ul id="location-list">
-                    <li><button class="location-button button" data-place="Spori">Spori</button></li>
-                    <li><button class="location-button button" data-place="Fori">Fori</button></li>
-                    <li><button class="location-button button" data-place="Alagsor">Alagsor</button></li>
-                    <li><button class="location-button button" data-place="Kertesz">Kertesz</button></li>
-                    <li><button class="location-button button" data-place="Nitro">Nitro</button></li>
-                    <li><button class="location-button button" data-place="Kastely">Kastely</button></li>
-                    <li><button class="location-button button" data-place="Fincsi Bufé">Fincsi Bufé</button></li>
-                    <li><button class="location-button button" data-place="Nyugdíjas">Nyugdíjas</button></li>
-                    <li><button class="location-button button" data-place="Petfurdo">Petfurdo</button></li>
-                    <li><button class="location-button button" data-place="Dr. Szikla">Dr. Szikla</button></li>
-                    <li><button class="location-button button" data-place="Gaspar Birtok">Gaspar Birtok</button></li>
-                    <li><button class="location-button button" data-place="Foter">Foter</button></li>
-                    <li><button class="location-button button" data-place="Danko Utca">Danko Utca</button></li>
-                    <li><button class="location-button button" data-place="Bisztro">Bisztro</button></li>
-                    <li><button class="location-button button" data-place="Muzeumkert">Muzeumkert</button></li>
-                    <li><button class="location-button button disabled" data-place="Laboratórium" disabled>Laboratórium</button></li>
-                    <!-- További helyek hozzáadása szükség szerint -->
-                </ul>
-            </aside>
-
-            <!-- Fő jelenet megjelenítése -->
+        <!-- Scene Display Screen -->
+        <div class="screen" id="scene-display-screen">
             <div id="scene-display">
-                <!-- Jelenetek dinamikusan ide lesznek betöltve -->
+                <!-- Scene content will be dynamically inserted here -->
             </div>
-        </section>
+        </div>
 
-        <!-- Játékos információ -->
-        <aside id="player-info" aria-label="Játékos információ">
-            <p id="player-name">Név: </p>
-            <p id="player-level">Szint: 1</p>
-            <p id="player-xp">XP: 0/100</p>
-            <button id="mute-button" class="button" aria-label="Hang némítása">Némítás</button>
-        </aside>
-
-        <!-- Feladatlista -->
-        <aside id="task-list" aria-label="Aktuális feladatok">
-            <h2>Aktuális feladatok</h2>
-            <div id="main-quest">
-                <h3>Fő Küldetés</h3>
-                <p>Jelenlegi szint: <span id="main-quest-stage">1</span></p>
-                <progress id="main-quest-progress" value="1" max="5"></progress>
+        <!-- Dialogue Box -->
+        <div class="dialogue-box" id="dialogue-box" style="display: none;">
+            <p id="dialogue-text"></p>
+            <div id="choices-container">
+                <!-- Choice outcomes will be dynamically inserted here -->
             </div>
-            <ul id="tasks">
-                <!-- Feladatok dinamikusan ide lesznek betöltve -->
-            </ul>
-        </aside>
+            <button class="button" id="close-dialogue-button">Bezár</button>
+        </div>
     </main>
 
-    <!-- Külső könyvtárak -->
-    <!-- Removed integrity and crossorigin attributes -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
-    <script src="main.js" type="module"></script>
+    <script src="script.js"></script>
 </body>
 </html>
